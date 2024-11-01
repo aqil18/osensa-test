@@ -1,4 +1,3 @@
-# Setup
 # There is an api that produces all stations in map bound
 # We must make n api calls over x min to gather all samples
 import os
