@@ -53,19 +53,14 @@ async def main(lat1, lng1, lat2, lng2, sampling_period, sampling_rate):
 
     async with aiohttp.ClientSession() as session:
         for _ in range(sampling_period):
-            await asyncio.gather(
+            pm25_values = await asyncio.gather(
                 
-                for station in stations:
-                    pm25 = get_pm25(session, station)
-                    print(f"Station: {stations[idx]['city']['name']}, PM2.5: {pm25}")
-
                 *[get_pm25(session, station) for station in stations]
-
             )
 
-            for idx, pm25 in enumerate(pm25_values):
-                if pm25 is not None:
-                    print(f"Station: {stations[idx]['city']['name']}, PM2.5: {pm25}")
+            for station, pm25 in zip(stations, pm25_values):
+                if pm25 != 0:
+                    print(f"Station: {station['station']['name']}, PM2.5: {pm25}")
                     all_pm25_values.append(pm25)
 
             await asyncio.sleep(60 / sampling_rate)  # Wait based on the sampling rate
