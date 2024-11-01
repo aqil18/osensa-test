@@ -7,11 +7,11 @@ import asyncio
 import aiohttp
 from dotenv import load_dotenv
 
-# Load environment variables
+## Load environment variables
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 
-# Function to fetch all monitoring stations within the specified bounds
+## Function to fetch all monitoring stations within the specified bounds
 async def fetch_stations(lat1, lng1, lat2, lng2):
     latlng = f"{lat1},{lng1},{lat2},{lng2}"
 
@@ -29,7 +29,7 @@ async def fetch_stations(lat1, lng1, lat2, lng2):
                 print(f"HTTP Error: {response.status}")
                 return []
 
-# Function to fetch real-time PM2.5 data for a specific station
+## Function to fetch real-time PM2.5 data for a specific station
 async def get_pm25(session, station):
     async with session.get(f"https://api.waqi.info/feed/@{station['uid']}/?token={TOKEN}") as response:
         
@@ -46,13 +46,15 @@ async def get_pm25(session, station):
             print(f"HTTP Error: {response.status}")
             return None
 
-# Main function
+## Main function -> Fetch stations, Samples based on sampling rate and calculates average
 async def main(lat1, lng1, lat2, lng2, sampling_period, sampling_rate):
     stations = await fetch_stations(lat1, lng1, lat2, lng2)
     all_pm25_values = []
 
     async with aiohttp.ClientSession() as session:
         for _ in range(sampling_period):
+
+            ## Collection of awaitables grouped together
             pm25_values = await asyncio.gather(
                 
                 *[get_pm25(session, station) for station in stations]
@@ -63,14 +65,17 @@ async def main(lat1, lng1, lat2, lng2, sampling_period, sampling_rate):
                     print(f"Station: {station['station']['name']}, PM2.5: {pm25}")
                     all_pm25_values.append(pm25)
 
-            await asyncio.sleep(60 / sampling_rate)  # Wait based on the sampling rate
-
+            ## Wait based on the sampling rate
+            await asyncio.sleep(60 / sampling_rate)  
+    
+    ## Calculating an average
     if all_pm25_values:
         overall_average_pm25 = sum(all_pm25_values) / len(all_pm25_values)
         print(f"\nOverall PM2.5 average over {sampling_period} minutes: {overall_average_pm25:.2f}")
     else:
         print("No PM2.5 data collected.")
 
+## Collects arguments from CMD line
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Calculate average PM2.5 for stations within specified bounds.")
     parser.add_argument("lat1", type=float, help="Latitude 1")
